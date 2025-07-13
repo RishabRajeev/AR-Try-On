@@ -1,1 +1,99 @@
- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Try-On Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; text-align: center; }
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; font-weight: 300; }
+        .header p { font-size: 1.1rem; opacity: 0.9; }
+        .main-content { padding: 40px; }
+        .upload-section { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px; }
+        .upload-area { border: 3px dashed #ddd; border-radius: 15px; padding: 40px; text-align: center; transition: all 0.3s ease; cursor: pointer; background: #fafafa; }
+        .upload-area:hover { border-color: #667eea; background: #f0f4ff; }
+        .upload-area.dragover { border-color: #667eea; background: #e8f2ff; transform: scale(1.02); }
+        .upload-area h3 { color: #333; margin-bottom: 15px; font-size: 1.3rem; }
+        .upload-area p { color: #666; margin-bottom: 20px; }
+        .upload-icon { font-size: 3rem; color: #667eea; margin-bottom: 15px; }
+        .file-input { display: none; }
+        .preview-image { max-width: 100%; max-height: 300px; border-radius: 10px; margin-top: 15px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); }
+        .generate-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 15px 40px; font-size: 1.2rem; border-radius: 50px; cursor: pointer; transition: all 0.3s ease; display: block; margin: 0 auto; font-weight: 600; }
+        .generate-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3); }
+        .generate-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .result-section { margin-top: 40px; text-align: center; }
+        .result-image { max-width: 100%; max-height: 600px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); margin-top: 20px; }
+        .loading { display: none; text-align: center; margin: 20px 0; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .error { background: #ff6b6b; color: white; padding: 15px; border-radius: 10px; margin: 20px 0; display: none; }
+        .success { background: #51cf66; color: white; padding: 15px; border-radius: 10px; margin: 20px 0; display: none; }
+        @media (max-width: 768px) { .upload-section { grid-template-columns: 1fr; gap: 20px; } .header h1 { font-size: 2rem; } .main-content { padding: 20px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Virtual Try-On Demo</h1>
+            <p>Upload a person image and a clothing item to see the virtual try-on result</p>
+        </div>
+        <div class="main-content">
+            <div class="upload-section">
+                <div class="upload-area" id="person-upload">
+                    <div class="upload-icon">👤</div>
+                    <h3>Person Image</h3>
+                    <p>Upload a photo of a person (front-facing, full body)</p>
+                    <input type="file" class="file-input" id="person-input" accept="image/*">
+                    <img class="preview-image" id="person-preview" style="display: none;">
+                </div>
+                <div class="upload-area" id="clothing-upload">
+                    <div class="upload-icon">👕</div>
+                    <h3>Clothing Item</h3>
+                    <p>Upload a clothing item image (front view, plain background)</p>
+                    <input type="file" class="file-input" id="clothing-input" accept="image/*">
+                    <img class="preview-image" id="clothing-preview" style="display: none;">
+                </div>
+            </div>
+            <button class="generate-btn" id="generate-btn" disabled>Generate Virtual Try-On</button>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing your images... This may take a few moments.</p>
+            </div>
+            <div class="error" id="error"></div>
+            <div class="success" id="success"></div>
+            <div class="result-section" id="result-section" style="display: none;">
+                <h2>Virtual Try-On Result</h2>
+                <img class="result-image" id="result-image">
+            </div>
+        </div>
+    </div>
+    <script>
+        let personFile = null;
+        let clothingFile = null;
+        const personUpload = document.getElementById('person-upload');
+        const personInput = document.getElementById('person-input');
+        const personPreview = document.getElementById('person-preview');
+        personUpload.addEventListener('click', () => personInput.click());
+        personUpload.addEventListener('dragover', (e) => { e.preventDefault(); personUpload.classList.add('dragover'); });
+        personUpload.addEventListener('dragleave', () => { personUpload.classList.remove('dragover'); });
+        personUpload.addEventListener('drop', (e) => { e.preventDefault(); personUpload.classList.remove('dragover'); const files = e.dataTransfer.files; if (files.length > 0) { handleFileSelect(files[0], 'person'); } });
+        personInput.addEventListener('change', (e) => { if (e.target.files.length > 0) { handleFileSelect(e.target.files[0], 'person'); } });
+        const clothingUpload = document.getElementById('clothing-upload');
+        const clothingInput = document.getElementById('clothing-input');
+        const clothingPreview = document.getElementById('clothing-preview');
+        clothingUpload.addEventListener('click', () => clothingInput.click());
+        clothingUpload.addEventListener('dragover', (e) => { e.preventDefault(); clothingUpload.classList.add('dragover'); });
+        clothingUpload.addEventListener('dragleave', () => { clothingUpload.classList.remove('dragover'); });
+        clothingUpload.addEventListener('drop', (e) => { e.preventDefault(); clothingUpload.classList.remove('dragover'); const files = e.dataTransfer.files; if (files.length > 0) { handleFileSelect(files[0], 'clothing'); } });
+        clothingInput.addEventListener('change', (e) => { if (e.target.files.length > 0) { handleFileSelect(e.target.files[0], 'clothing'); } });
+        function handleFileSelect(file, type) { if (!file.type.startsWith('image/')) { showError('Please select an image file.'); return; } const reader = new FileReader(); reader.onload = function(e) { const preview = type === 'person' ? personPreview : clothingPreview; preview.src = e.target.result; preview.style.display = 'block'; if (type === 'person') { personFile = file; } else { clothingFile = file; } updateGenerateButton(); }; reader.readAsDataURL(file); }
+        function updateGenerateButton() { const generateBtn = document.getElementById('generate-btn'); generateBtn.disabled = !(personFile && clothingFile); }
+        function showError(message) { const errorDiv = document.getElementById('error'); errorDiv.textContent = message; errorDiv.style.display = 'block'; setTimeout(() => { errorDiv.style.display = 'none'; }, 5000); }
+        function showSuccess(message) { const successDiv = document.getElementById('success'); successDiv.textContent = message; successDiv.style.display = 'block'; setTimeout(() => { successDiv.style.display = 'none'; }, 5000); }
+        document.getElementById('generate-btn').addEventListener('click', async () => { if (!personFile || !clothingFile) { showError('Please upload both person and clothing images.'); return; } const formData = new FormData(); formData.append('person_image', personFile); formData.append('clothing_image', clothingFile); const generateBtn = document.getElementById('generate-btn'); const loading = document.getElementById('loading'); const resultSection = document.getElementById('result-section'); generateBtn.disabled = true; loading.style.display = 'block'; resultSection.style.display = 'none'; try { const response = await fetch('/upload', { method: 'POST', body: formData }); if (response.ok) { const imageBlob = await response.blob(); const imageUrl = URL.createObjectURL(imageBlob); const resultContainer = document.getElementById('result-section'); const resultImage = document.getElementById('result-image'); resultImage.src = imageUrl; resultContainer.style.display = 'block'; resultContainer.scrollIntoView({ behavior: 'smooth' }); } else { const errorData = await response.json(); alert('Error: ' + (errorData.error || 'Failed to process images')); } } catch (error) { console.error('Error:', error); alert('Error processing images. Please try again.'); } finally { const generateBtn = document.getElementById('generate-btn'); const loading = document.getElementById('loading'); generateBtn.disabled = false; loading.style.display = 'none'; } });
+    </script>
+</body>
+</html> 
