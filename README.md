@@ -1,79 +1,160 @@
-## Our Team's Follow-up Research
+# Virtual Try-On Demo
 
-**1. [NEW!] PromptDresser (https://github.com/rlawjdghek/PromptDresser) - Arxiv 24.12**<br>
-2. StableVITON (https://github.com/rlawjdghek/StableVITON) - CVPR 2024<br>
-3. HR-VITON (https://github.com/sangyun884/HR-VITON) - ECCV 2022
+A web-based virtual try-on application that allows users to upload person and clothing images to see realistic virtual try-on results.
 
-# VITON-HD &mdash; Official PyTorch Implementation
+## Features
 
-**\*\*\*\*\* 2025-04-27: The link to the dataset has been updated. We apologize for the inconvenience. \*\*\*\*\***
+- **Web Interface**: Modern, responsive UI for easy image upload
+- **Real-time Processing**: Upload images and get results directly in the browser
+- **High-Quality Results**: Uses pre-trained models for realistic virtual try-on
+- **Drag & Drop**: Easy file upload with drag and drop support
+- **Mobile Responsive**: Works on desktop and mobile devices
 
-![Teaser image](./assets/teaser.png)
+## How It Works
 
-> **VITON-HD: High-Resolution Virtual Try-On via Misalignment-Aware Normalization**<br>
-> [Seunghwan Choi](https://github.com/shadow2496)\*<sup>1</sup>, [Sunghyun Park](https://psh01087.github.io)\*<sup>1</sup>, [Minsoo Lee](https://github.com/Minsoo2022)\*<sup>1</sup>, [Jaegul Choo](https://sites.google.com/site/jaegulchoo)<sup>1</sup><br>
-> <sup>1</sup>KAIST<br>
-> In CVPR 2021. (* indicates equal contribution)
+1. **Upload Images**: Upload a person image and a clothing item image
+2. **Image Processing**: The system extracts image numbers from filenames
+3. **Model Inference**: Uses pre-trained models to generate virtual try-on results
+4. **Display Results**: Shows the final virtual try-on image in the browser
 
-> Paper: https://arxiv.org/abs/2103.16874<br>
-> Project page: https://psh01087.github.io/VITON-HD
+## Requirements
 
-> **Abstract:** *The task of image-based virtual try-on aims to transfer a target clothing item onto the corresponding region of a person, which is commonly tackled by fitting the item to the desired body part and fusing the warped item with the person. While an increasing number of studies have been conducted, the resolution of synthesized images is still limited to low (e.g., 256x192), which acts as the critical limitation against satisfying online consumers. We argue that the limitation stems from several challenges: as the resolution increases, the artifacts in the misaligned areas between the warped clothes and the desired clothing regions become noticeable in the final results; the architectures used in existing methods have low performance in generating high-quality body parts and maintaining the texture sharpness of the clothes. To address the challenges, we propose a novel virtual try-on method called VITON-HD that successfully synthesizes 1024x768 virtual try-on images. Specifically, we first prepare the segmentation map to guide our virtual try-on synthesis, and then roughly fit the target clothing item to a given person's body. Next, we propose ALIgnment-Aware Segment (ALIAS) normalization and ALIAS generator to handle the misaligned areas and preserve the details of 1024x768 inputs. Through rigorous comparison with existing methods, we demonstrate that VITON-HD highly surpasses the baselines in terms of synthesized image quality both qualitatively and quantitatively.*
-
-## Dataset
-
-We collected a 1024×768 virtual try-on dataset for **research purposes only**.
-You can download the preprocessed dataset from [here](https://drive.google.com/file/d/1tLx8LRp-sxDp0EcYmYoV_vXdSc-jJ79w/view?usp=sharing).
-The frontal-view woman and top-clothing image pairs are split into training and test sets with 11,647 and 2,032 pairs, respectively. 
+- Python 3.7+
+- PyTorch
+- Flask
+- Other dependencies listed in `requirements.txt`
 
 ## Installation
 
-Clone this repository:
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd virtual-tryon-demo
+   ```
+
+2. **Create a virtual environment**:
+   ```bash
+   python -m venv venv
+   ```
+
+3. **Activate the virtual environment**:
+   - Windows:
+     ```bash
+     venv\Scripts\activate
+     ```
+   - Linux/Mac:
+     ```bash
+     source venv/bin/activate
+     ```
+
+4. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. **Download pre-trained models**:
+   - Place the model checkpoints in the `checkpoints/` directory:
+     - `seg_final.pth`
+     - `gmm_final.pth`
+     - `alias_final.pth`
+
+6. **Prepare dataset**:
+   - Ensure the test dataset is in the `datasets/test/` directory with the following structure:
+     ```
+     datasets/
+     └── test/
+         ├── image/          # Person images
+         ├── cloth/          # Clothing images
+         ├── cloth-mask/     # Clothing masks
+         ├── image-parse/    # Person parsing
+         └── pose/           # Pose data
+     ```
+
+## Usage
+
+1. **Start the application**:
+   ```bash
+   python app.py
+   ```
+
+2. **Open your browser** and go to `http://localhost:5000`
+
+3. **Upload images**:
+   - Upload a person image from the test dataset (e.g., "08909_00.jpg")
+   - Upload a clothing image from the test dataset (e.g., "01430_00.jpg")
+
+4. **Generate results**:
+   - Click "Generate Virtual Try-On" to process the images
+   - Wait for the processing to complete
+   - View the virtual try-on result
+
+## Important Notes
+
+- **Test Images Only**: The application currently works with images from the test dataset only
+- **Filename Format**: Upload images with the exact filenames from the test dataset
+- **Processing Time**: The first run may take longer as models are loaded into memory
+- **Memory Requirements**: Ensure sufficient RAM for model loading and inference
+
+## File Structure
 
 ```
-git clone https://github.com/shadow2496/VITON-HD.git
-cd ./VITON-HD/
+├── app.py                 # Main Flask application
+├── requirements.txt       # Python dependencies
+├── templates/
+│   └── index.html        # Web interface
+├── datasets/
+│   └── test/             # Test dataset
+├── checkpoints/          # Pre-trained models
+├── results/              # Generated results
+└── uploads/              # Temporary upload storage
 ```
 
-Install PyTorch and other dependencies:
+## API Endpoints
 
-```
-conda create -y -n [ENV] python=3.8
-conda activate [ENV]
-conda install -y pytorch=[>=1.6.0] torchvision cudatoolkit=[>=9.2] -c pytorch
-pip install opencv-python torchgeometry
-```
+- `GET /`: Main web interface
+- `POST /upload`: Upload and process images
+- `GET /results/<filename>`: Serve result images
 
-## Pre-trained networks
+## Troubleshooting
 
-We provide pre-trained networks and sample images from the test dataset. Please download `*.pkl` and test images from the [VITON-HD Google Drive folder](https://drive.google.com/drive/folders/0B8kXrnobEVh9fnJHX3lCZzEtd20yUVAtTk5HdWk2OVV0RGl6YXc0NWhMOTlvb1FKX3Z1OUk?resourcekey=0-OIXHrDwCX8ChjypUbJo4fQ&usp=sharing) and unzip `*.zip` files. `test.py` assumes that the downloaded files are placed in `./checkpoints/` and `./datasets/` directories.
+### Common Issues
 
-## Testing
+1. **Module not found errors**:
+   - Ensure virtual environment is activated
+   - Install all requirements: `pip install -r requirements.txt`
 
-To generate virtual try-on images, run:
+2. **Model loading errors**:
+   - Check that model files exist in `checkpoints/` directory
+   - Verify model file names match expected names
 
-```
-CUDA_VISIBLE_DEVICES=[GPU_ID] python test.py --name [NAME]
-```
+3. **Dataset errors**:
+   - Ensure test dataset structure is correct
+   - Check that uploaded images exist in the dataset
 
-The results are saved in the `./results/` directory. You can change the location by specifying the `--save_dir` argument. To synthesize virtual try-on images with different pairs of a person and a clothing item, edit `./datasets/test_pairs.txt` and run the same command.
+4. **Memory errors**:
+   - Close other applications to free memory
+   - Consider using a machine with more RAM
 
-> [!Note]
-> The preprocessing code for clothing-agnostic person representation differs slightly in [HR-VITON](https://github.com/sangyun884/HR-VITON).
+## Development
+
+### Adding New Features
+
+1. **Frontend**: Modify `templates/index.html` for UI changes
+2. **Backend**: Edit `app.py` for server-side logic
+3. **Models**: Update model loading in the `load_models()` function
+
+### Testing
+
+- Test with different image pairs from the test dataset
+- Verify error handling with invalid uploads
+- Check mobile responsiveness
 
 ## License
 
-All material is made available under [Creative Commons BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). You can **use, redistribute, and adapt** the material for **non-commercial purposes**, as long as you give appropriate credit by **citing our paper** and **indicate any changes** that you've made.
+This project is for demonstration purposes. Please respect the original model licenses and dataset terms of use.
 
-## Citation
+## Acknowledgments
 
-If you find this work useful for your research, please cite our paper:
-
-```
-@inproceedings{choi2021viton,
-  title={VITON-HD: High-Resolution Virtual Try-On via Misalignment-Aware Normalization},
-  author={Choi, Seunghwan and Park, Sunghyun and Lee, Minsoo and Choo, Jaegul},
-  booktitle={Proc. of the IEEE conference on computer vision and pattern recognition (CVPR)},
-  year={2021}
-}
-```
+- Based on VITON-HD research and implementation
+- Uses pre-trained models for virtual try-on generation
+- Web interface built with Flask and modern CSS
