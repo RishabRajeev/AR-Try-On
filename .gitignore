@@ -1,59 +1,13 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
+# Virtual environment
 venv/
 env/
 ENV/
-env.bak/
-venv.bak/
 
-# PyTorch
-*.pth
-*.pkl
-*.pt
-
-# Model checkpoints (large files)
-checkpoints/
-
-# Results and uploads
+# Generated files
 results/
 uploads/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-
-# Temporary files
-*.tmp
-*.temp
 temp_test_pairs.txt
+
+# Python cache
+__pycache__/
+*.pyc
